@@ -1,0 +1,109 @@
+body {
+	/*background-color: #131339;*/
+	/*color: white;*/
+}
+
+.header {
+	height:5em;
+	padding-top: .5em;
+	padding-bottom: .5em;
+}
+
+#title {
+	background-color: #262673;
+	height: 100%;
+	width: 30%;
+	text-align: center;
+	color: white;
+	margin: 0 auto;
+}
+
+.row {
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+.task-sec {
+	margin-bottom: 10em;
+}
+
+#tasks {
+	width: 80%;
+	table-layout: fixed;
+	margin: 0 auto;
+}
+
+#completed {
+	width: 80%;
+	table-layout: fixed;
+	margin: 0 auto;
+}
+
+tr {
+	text-align: center;
+}
+
+.spacer {
+	height: .5em;
+}
+
+.task-options-col {
+	width: 10%;
+}
+
+.task-col {
+	width: 45%;
+}
+
+.timespent-col {
+	width: 45%;
+}
+
+.task {
+	margin-bottom: 0;
+}
+
+.timespent-wrapper {
+	margin-left: 3em;
+}
+
+.btn {
+	margin-right: .25em;
+	margin-left: .25em;
+}
+
+#add-task-btn {
+	margin: 0;
+	position: absolute;
+	top: 85%;
+	-ms-transform: translateY(-85%);
+	transform: translateY(-85%);
+}
+
+.new-task-input {
+	border: 1px solid #ccc;
+	outline: none;
+	width: 20em;
+}
+
+.tasks-header {
+	display: inline;
+	margin-right: .5em;
+}
+
+
+.close {
+	cursor: pointer;
+	display: inline;
+}
+
+.selected td:nth-child(2) {
+	background: #888;
+ 	color: #fff;
+}
+
+.selected td:nth-child(3) {
+	background: #888;
+ 	color: #fff;
+}
+

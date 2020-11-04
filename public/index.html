@@ -1,0 +1,360 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Pomodoro Tracker</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="index.css">
+
+</head>
+
+<body>
+
+	<div class= "header">
+		<h1 id = "title">Pomodoro Timer</h1>
+	</div>
+	
+	<a href="/auth/google">Sign In with Google</a>
+
+	<div class="container">
+		<div class="row">
+			<div class="col text-center">
+				<div class="btn-group" role="group" aria-label="Timers">
+					<button type="button" class="btn btn-secondary" id = "pomodoro-btn">Pomodoro</button>
+					<button type="button" class="btn btn-secondary" id = "short-break-btn">Short Break</button>
+					<button type="button" class="btn btn-secondary" id = "long-break-btn">Long Break</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col text-center">
+				<h1 class = "timer">25:00</h1>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col text-center">
+				<button type="button" class="btn btn-success" id = "start-btn"> Start </button>
+				<button type="button" class="btn btn-danger" id = "stop-btn"> Stop </button>
+				<button type="button" class="btn btn-warning" id = "reset-btn"> Reset </button>
+			</div>
+		</div>
+	</div>
+
+	<div class = "task-sec">
+		<div class = "container">
+			<div class = "row"> 
+				<div class = "col">
+					<h1  class = "tasks-header"> Tasks </h1>
+					<button type="button" class="btn btn-primary" id = "add-task-btn"> Add Task</button>
+				</div>
+			</div>
+		</div>
+
+		<div class = "container">
+			<div class = "row"> 
+				<div class = "col">
+					<table id = "tasks">
+						<tr>
+							<td class = "task-options-col"></td>
+							<th class = "task-col">Task</th>
+							<th class = "timespent-col">Time Spent</th>
+						</tr>
+					</table>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+
+	<div class = "container">
+		<div class = "row"> 
+			<div class = "col">
+				<h1> Completed </h1>
+			</div>
+		</div>
+	</div>
+
+	<div class = "container">
+		<div class = "row"> 
+			<div class = "col">
+				<table id= "completed">
+					<tr>
+						<td class = "task-options-col"></td>
+						<th class = "task-col">Task</th>
+						<th class = "timespent-col">Time Spent</th>
+					</tr>
+				</table>
+			</div>
+			
+		</div>
+	</div>
+
+
+</body>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script>
+	//Constants
+	const pomodoro = "25:00"
+	const shortBreakTime = "05:00"
+	const longBreakTime = "20:00"
+
+	//Global vars
+	let timers = {
+		pomodoro: pomodoro,
+		shortbreak: shortBreakTime,
+		longbreak: longBreakTime
+	}
+	let $timer = $(".timer")
+	let intervalTimer
+	
+
+	//Model
+	let current = "pomodoro"
+	let selectedTask = null
+
+	class Task {
+		constructor(task) {
+			this.task = task
+			this.timespent = 0 //in seconds
+			this.completed = false
+			this.taskId = Date.now()
+		}
+
+		getTask() {
+			return this.task
+		}
+
+		getTaskId() {
+			return this.taskId
+		}
+
+		getTimeSpent() {
+			return this.timespent
+		}
+
+		spendTime(seconds) {
+			this.timespent += seconds
+		}
+
+		getTaskServerId() {
+			return this.serverId;
+		}
+
+		setTaskServerId(serverId) {
+			this.serverId = serverId;
+		}
+	}
+
+	let taskList = []
+	let completedTasks = []
+
+	let addTask = function (task) {
+		fetch("/addTask", {
+			  method: "POST", 
+			   headers: {
+				    'Content-Type': 'application/json',
+				  },
+			  body: JSON.stringify({description: task.getTask()})
+			}).then(res => res.json())
+		.then(data => console.log(data));
+
+		taskList.push(task)
+	}
+
+	let completeTask = function (taskId) {
+		const index = taskList.findIndex(task => task.getTaskId() === Number(taskId));
+		completedTasks.push(taskList[index])
+		taskList.splice(index, index)
+	}
+
+	let deleteTask = function (taskId) {
+		const index = taskList.findIndex(task => task.getTaskId() === Number(taskId));
+		taskList.splice(index, index)
+	} 
+
+	//View
+	let $selectedTask = null
+
+	let setTime = function (time) {
+		$timer.html(time)
+	}
+
+	let createNewTaskInput = function () {
+		let newTaskInput = '<input class = "new-task-input" type = "text">'
+		let $newTask = $("<tr> <td>" + newTaskInput + "</td> <td class = \"timespent\">00:00</td> </tr> ")
+		let $delButton = $("<button></button>").html("&#10006").attr("onclick", "event.stopPropagation(); deleteTaskHandler(this)")
+		let $completeButton = $("<button></button>").html("&#10004").attr("onclick", "event.stopPropagation(); completeTaskHandler(this)")
+		let $editCol = $("<td></td>").append($delButton).append($completeButton)
+		$newTask.prepend($editCol)
+
+		let $spacer = '<tr class = "spacer"> </tr>'
+		$("#tasks").append($newTask)
+		$("#tasks").append($spacer)
+	}
+
+	let setTask = function (input, id) {
+		$(input).off("blur") // To prevent error from refiring blur when element is removed
+		$tr = $(input).parent().parent()
+		$tr.data('key', id)
+		addSelectTaskListener($(input).parent().parent())
+		$(input).replaceWith('<p class = "task">' + $(input).val() + '</p>')
+	}
+
+	function deleteTaskOnView($task) {
+		$task.remove()
+
+	}
+	function completeTaskOnView($tsk) {
+		let $completedTask = $task.clone()
+		if ($completedTask.hasClass("selected")) {
+			$completedTask.removeClass("selected")
+			$selectedTask = null
+		}
+		$completedTask.find("td").eq(0).children().remove()
+		$completedTask.off("click")
+		$task.remove()
+		$("#completed").append($completedTask)
+
+	}
+
+	function selectTask(task) {
+		if ($selectedTask != null){
+			$selectedTask.removeClass("selected")
+		}
+
+		$(task).addClass("selected")
+		$selectedTask = $(task)
+	}
+
+
+	//Controllers
+	$("#pomodoro-btn").on("click", (event) => {
+		current = "pomodoro"
+		setTime(timers[current])
+		
+	})
+
+	$("#short-break-btn").on("click", (event) => {
+		current = "shortbreak"
+		setTime(timers[current])
+	})
+
+	$("#long-break-btn").on("click", (event) => {
+		current = "longbreak"
+		setTime(timers[current])
+	})
+
+	$("#start-btn").on("click", (event) => {
+		if (intervalTimer || (current==="pomodoro" && !$selectedTask)) {return}
+			intervalTimer = setInterval(countdown, 1000)
+	})
+
+	$("#stop-btn").on("click", (event) => {
+		clearInterval(intervalTimer)
+		intervalTimer = null
+	})
+
+	$("#reset-btn").on("click", (event) => {
+		setTime(timers[current])
+		clearInterval(intervalTimer)
+		intervalTimer = null
+	})
+
+	$("#add-task-btn").on("click", (event) => {
+		if ($(".new-task-input").length) {return} //can't add a new task until current task is input
+
+			createNewTaskInput()
+
+		$(".new-task-input").on("blur", (event) => {
+			createTaskHandler(event.target)
+			
+		})
+
+		$(".new-task-input").on("keyup", (event) => {
+			if (event.keyCode === 13) { //Enter
+				createTaskHandler(event.target)
+			}
+		})
+	})
+
+	function createTaskHandler(input) {
+		if ($(input).val().length == 0) {return}
+		const newTask = new Task($(input).val())
+		addTask(newTask)
+		setTask(event.target, newTask.getTaskId)
+
+	}
+
+	function deleteTaskHandler(button) {
+		$task = $(button).parent().parent()
+		deleteTask($task.data("key"))
+		deleteTaskOnView($task)
+
+	}
+
+	function completeTaskHandler(el) {
+		$task = $(el).parent().parent()
+		completeTask($task.data("key"))
+		completeTaskOnView($task)
+	}
+
+	function addSelectTaskListener(task) {
+		$(task).on("click", (event) => {
+			if (intervalTimer || current !== "pomodoro") {return}
+			selectedTask = $(task).data("key")
+			selectTask(task)
+		})
+	}
+
+	function countdown() {
+		let timer = $timer.html()
+		let min_sec = timer.split(":")
+		let min = parseInt(min_sec[0])
+		let sec = parseInt(min_sec[1])
+		sec -= 1
+		if (sec < 0) {
+			min -= 1
+			sec = 59
+		}
+
+		let formatString = format2Digits(min) + ":" + format2Digits(sec)
+		$timer.html(formatString)
+		if (current === "pomodoro") {
+			updateTime($selectedTask)
+		}
+		
+	}
+
+	function updateTime($selectedTask) {
+		$timeSpent = $selectedTask.children(".timespent")
+		timeSpent = $timeSpent.html()
+		min_sec = timeSpent.split(":")
+		min = parseInt(min_sec[0])
+		sec = parseInt(min_sec[1])
+		sec += 1
+		$timeSpent.html(formatTime(min, sec))
+
+	}
+
+	function formatTime(mins, secs) {
+		mins_carry = Math.floor(secs/60)
+		secs_remaining = secs % 60
+		mins += mins_carry
+		return format2Digits(mins) + ":" + format2Digits(secs) 
+	}
+
+	function format2Digits(int) {
+		if (int < 10) {
+			return "0".concat(int)
+		}
+		return int
+	} 
+
+</script>
+</html>

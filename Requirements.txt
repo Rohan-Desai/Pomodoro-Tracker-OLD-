@@ -1,0 +1,12 @@
+TODO:
+- Timer
+	- For Working DONE
+	- For Break
+
+- Add Tasks DONE
+- Select Task DONE
+- Mark Task As Completed DONE
+
+- Record Total Time DONE
+
+//refactor to use events?
